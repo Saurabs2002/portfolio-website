@@ -108,7 +108,7 @@ pipeline {
                     set -e
 
                     docker build \
-                      -t portfolio-backend:${BUILD_NUMBER} \
+                      -t portfolio-backend:latest \
                       ./backend
                 '''
 
@@ -118,7 +118,7 @@ pipeline {
                     set -e
 
                     docker build \
-                      -t portfolio-frontend:${BUILD_NUMBER} \
+                      -t portfolio-frontend:latest \
                       ./frontend
 
                     echo "Docker images:"
