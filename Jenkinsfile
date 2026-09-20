@@ -8,6 +8,38 @@ pipeline {
                 checkout scm
             }
         }
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                    cd frontend
+                    npm ci
+
+                    cd ../backend
+                    npm ci
+                '''
+            }
+        }
+
+        stage('OWASP Dependency Check') {
+            steps {
+                dependencyCheck(
+                    additionalArguments: '''
+                        --project "Portfolio Application"
+                        --scan .
+                        --format HTML
+                    '''
+                )
+            }
+        }
+
+        stage('Publish OWASP Report') {
+            steps {
+                dependencyCheckPublisher(
+                    pattern: '**/dependency-check-report.xml'
+                )
+            }
+        }
+    }
 
         stage('Verify') {
             steps {
