@@ -75,6 +75,24 @@ pipeline {
             }
         }
 
+        stage('Trivy Filesystem Scan') {
+    steps {
+        sh '''
+            set -e
+
+            echo "================================"
+            echo "Trivy Filesystem Security Scan"
+            echo "================================"
+
+            trivy fs \
+              --scanners vuln,secret,misconfig \
+              --severity HIGH,CRITICAL \
+              --no-progress \
+              .
+        '''
+    }
+}
+
         stage('Verify') {
             steps {
                 sh '''
