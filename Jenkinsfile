@@ -128,63 +128,43 @@ pipeline {
         }
 
         stage('Docker Push to ECR') {
-            steps {
-                echo 'Logging in to AWS ECR...'
+    steps {
+        echo 'Logging in to AWS ECR...'
 
-                sh '''
-                    set -e
+        sh '''
+            set -e
 
-                    aws ecr get-login-password \
-                      --region ${AWS_REGION} | \
-                    docker login \
-                      --username AWS \
-                      --password-stdin ${ECR_REGISTRY}
+            aws ecr get-login-password --region ${AWS_REGION} | \
+            docker login --username AWS --password-stdin ${ECR_REGISTRY}
 
-                    echo "ECR login successful"
-                '''
+            echo "ECR login successful"
 
-                echo 'Tagging backend image...'
+            echo "Tagging backend image..."
 
-                sh '''
-                    set -e
+            docker tag \
+              portfolio-backend:latest \
+              ${ECR_REGISTRY}/${BACKEND_REPO}:latest
 
-                    docker tag \
-                      portfolio-backend:${BUILD_NUMBER} \
-                      ${ECR_REGISTRY}/${BACKEND_REPO}:${BUILD_NUMBER}
-                '''
+            echo "Tagging frontend image..."
 
-                echo 'Tagging frontend image...'
+            docker tag \
+              portfolio-frontend:latest \
+              ${ECR_REGISTRY}/${FRONTEND_REPO}:latest
 
-                sh '''
-                    set -e
+            echo "Pushing backend image..."
 
-                    docker tag \
-                      portfolio-frontend:${BUILD_NUMBER} \
-                      ${ECR_REGISTRY}/${FRONTEND_REPO}:latest
-                '''
+            docker push \
+              ${ECR_REGISTRY}/${BACKEND_REPO}:latest
 
-                echo 'Pushing backend image to ECR...'
+            echo "Pushing frontend image..."
 
-                sh '''
-                    set -e
+            docker push \
+              ${ECR_REGISTRY}/${FRONTEND_REPO}:latest
 
-                    docker push \
-                      ${ECR_REGISTRY}/${BACKEND_REPO}:latest
-                '''
-
-                echo 'Pushing frontend image to ECR...'
-
-                sh '''
-                    set -e
-
-                    docker push \
-                      ${ECR_REGISTRY}/${FRONTEND_REPO}:${BUILD_NUMBER}
-                '''
-
-                echo 'Docker images pushed successfully to ECR.'
-            }
-        }
-
+            echo "Docker images pushed successfully."
+        '''
+    }
+}
         stage('Verify') {
             steps {
                 sh '''
