@@ -54,12 +54,6 @@ pipeline {
 
                     echo "Project files:"
                     ls -la
-
-                    echo "Frontend:"
-                    ls -la frontend
-
-                    echo "Backend:"
-                    ls -la backend
                 '''
             }
         }
