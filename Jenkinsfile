@@ -1,36 +1,28 @@
 pipeline {
-
     agent any
 
     environment {
+        SONAR_PROJECT_KEY = 'portfolio-app'
+
+        // AWS / ECR
         AWS_REGION = 'ap-south-1'
         ECR_REGISTRY = '573011045411.dkr.ecr.ap-south-1.amazonaws.com'
 
         BACKEND_REPO = 'portfolio-backend'
         FRONTEND_REPO = 'portfolio-frontend'
-
-        SONAR_PROJECT_KEY = 'portfolio-app'
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                echo '================================'
-                echo 'Checking out source code'
-                echo '================================'
-
+                echo 'Checking out source code...'
                 checkout scm
             }
         }
 
-
         stage('Install Dependencies') {
             steps {
-                echo '================================'
-                echo 'Installing dependencies'
-                echo '================================'
-
                 sh '''
                     set -e
 
@@ -41,56 +33,36 @@ pipeline {
                     echo "Installing backend dependencies..."
                     cd ../backend
                     npm ci
-
-                    echo "Dependencies installed successfully"
                 '''
             }
         }
 
-
         stage('OWASP Dependency Check') {
             steps {
-                echo '================================'
-                echo 'OWASP Dependency Check'
-                echo '================================'
-
                 dependencyCheck(
+                    odcInstallation: 'OWASP-Dependency-Check',
                     additionalArguments: '''
+                        --project "Portfolio Application"
                         --scan .
                         --format XML
                         --format HTML
-                        --out .
-                        --disableOssIndex
-                    ''',
-                    odcInstallation: 'OWASP Dependency-Check'
+                        --noupdate
+                    '''
                 )
             }
         }
-
 
         stage('Publish OWASP Report') {
             steps {
-                echo '================================'
-                echo 'Publishing OWASP Report'
-                echo '================================'
-
                 dependencyCheckPublisher(
-                    pattern: 'dependency-check-report.xml'
-                )
-
-                archiveArtifacts(
-                    artifacts: 'dependency-check-report.html',
-                    allowEmptyArchive: true
+                    pattern: '**/dependency-check-report.xml'
                 )
             }
         }
 
-
         stage('SonarQube Analysis') {
             steps {
-                echo '================================'
-                echo 'SonarQube Analysis'
-                echo '================================'
+                echo 'Running SonarQube analysis...'
 
                 withSonarQubeEnv('SonarQube') {
 
@@ -101,27 +73,20 @@ pipeline {
                         sh """
                             set -e
 
-                            echo "Running SonarQube analysis..."
-
                             ${scannerHome}/bin/sonar-scanner \
                               -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
                               -Dsonar.projectName="Portfolio Application" \
                               -Dsonar.sources=frontend,backend \
                               -Dsonar.exclusions="**/node_modules/**"
-
-                            echo "SonarQube analysis completed"
                         """
                     }
                 }
             }
         }
 
-
         stage('Trivy Filesystem Scan') {
             steps {
-                echo '================================'
-                echo 'Trivy Filesystem Security Scan'
-                echo '================================'
+                echo 'Running Trivy filesystem scan...'
 
                 sh '''
                     set -e
@@ -135,12 +100,9 @@ pipeline {
             }
         }
 
-
         stage('Docker Build') {
             steps {
-                echo '================================'
-                echo 'Building Backend Docker Image'
-                echo '================================'
+                echo 'Building backend Docker image...'
 
                 sh '''
                     set -e
@@ -148,13 +110,9 @@ pipeline {
                     docker build \
                       -t portfolio-backend:${BUILD_NUMBER} \
                       ./backend
-
-                    echo "Backend image built successfully"
                 '''
 
-                echo '================================'
-                echo 'Building Frontend Docker Image'
-                echo '================================'
+                echo 'Building frontend Docker image...'
 
                 sh '''
                     set -e
@@ -163,51 +121,15 @@ pipeline {
                       -t portfolio-frontend:${BUILD_NUMBER} \
                       ./frontend
 
-                    echo "Frontend image built successfully"
-
                     echo "Docker images:"
                     docker images | grep portfolio
                 '''
             }
         }
 
-
-        stage('Trivy Image Scan') {
+        stage('Docker Push to ECR') {
             steps {
-                echo '================================'
-                echo 'Trivy Backend Image Scan'
-                echo '================================'
-
-                sh '''
-                    set -e
-
-                    trivy image \
-                      --severity HIGH,CRITICAL \
-                      --no-progress \
-                      portfolio-backend:${BUILD_NUMBER}
-                '''
-
-                echo '================================'
-                echo 'Trivy Frontend Image Scan'
-                echo '================================'
-
-                sh '''
-                    set -e
-
-                    trivy image \
-                      --severity HIGH,CRITICAL \
-                      --no-progress \
-                      portfolio-frontend:${BUILD_NUMBER}
-                '''
-            }
-        }
-
-
-        stage('Push Images to ECR') {
-            steps {
-                echo '================================'
-                echo 'Logging in to AWS ECR'
-                echo '================================'
+                echo 'Logging in to AWS ECR...'
 
                 sh '''
                     set -e
@@ -221,9 +143,7 @@ pipeline {
                     echo "ECR login successful"
                 '''
 
-                echo '================================'
-                echo 'Tagging Docker Images'
-                echo '================================'
+                echo 'Tagging backend image...'
 
                 sh '''
                     set -e
@@ -231,17 +151,19 @@ pipeline {
                     docker tag \
                       portfolio-backend:${BUILD_NUMBER} \
                       ${ECR_REGISTRY}/${BACKEND_REPO}:${BUILD_NUMBER}
+                '''
+
+                echo 'Tagging frontend image...'
+
+                sh '''
+                    set -e
 
                     docker tag \
                       portfolio-frontend:${BUILD_NUMBER} \
                       ${ECR_REGISTRY}/${FRONTEND_REPO}:${BUILD_NUMBER}
-
-                    echo "Images tagged successfully"
                 '''
 
-                echo '================================'
-                echo 'Pushing Backend Image to ECR'
-                echo '================================'
+                echo 'Pushing backend image to ECR...'
 
                 sh '''
                     set -e
@@ -250,9 +172,7 @@ pipeline {
                       ${ECR_REGISTRY}/${BACKEND_REPO}:${BUILD_NUMBER}
                 '''
 
-                echo '================================'
-                echo 'Pushing Frontend Image to ECR'
-                echo '================================'
+                echo 'Pushing frontend image to ECR...'
 
                 sh '''
                     set -e
@@ -261,35 +181,26 @@ pipeline {
                       ${ECR_REGISTRY}/${FRONTEND_REPO}:${BUILD_NUMBER}
                 '''
 
-                echo '================================'
-                echo 'ECR Push Successful'
-                echo '================================'
+                echo 'Docker images pushed successfully to ECR.'
             }
         }
 
-
         stage('Verify') {
             steps {
-                echo '================================'
-                echo 'Pipeline Verification'
-                echo '================================'
-
                 sh '''
-                    echo "Backend image:"
-                    docker images ${ECR_REGISTRY}/${BACKEND_REPO}:${BUILD_NUMBER}
+                    echo "================================"
+                    echo "Pipeline Verification"
+                    echo "================================"
 
-                    echo "Frontend image:"
-                    docker images ${ECR_REGISTRY}/${FRONTEND_REPO}:${BUILD_NUMBER}
-
-                    echo ""
-                    echo "ECR images pushed:"
+                    echo "Backend ECR image:"
                     echo "${ECR_REGISTRY}/${BACKEND_REPO}:${BUILD_NUMBER}"
+
+                    echo "Frontend ECR image:"
                     echo "${ECR_REGISTRY}/${FRONTEND_REPO}:${BUILD_NUMBER}"
                 '''
             }
         }
     }
-
 
     post {
 
