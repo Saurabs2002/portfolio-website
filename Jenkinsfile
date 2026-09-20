@@ -24,6 +24,7 @@ pipeline {
         stage('OWASP Dependency Check') {
             steps {
                 dependencyCheck(
+                    odcInstallation: 'OWASP-Dependency-Check',
                     additionalArguments: '''
                         --project "Portfolio Application"
                         --scan .
