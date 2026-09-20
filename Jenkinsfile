@@ -37,7 +37,19 @@ pipeline {
                 )
             }
         }
-
+stage('SonarQube Analysis') {
+    steps {
+        withSonarQubeEnv('SonarQube') {
+            sh '''
+                sonar-scanner \
+                  -Dsonar.projectKey=portfolio-app \
+                  -Dsonar.projectName="Portfolio Application" \
+                  -Dsonar.sources=frontend,backend \
+                  -Dsonar.exclusions="**/node_modules/**"
+            '''
+        }
+    }
+}
         
 
         stage('Verify') {
