@@ -1,0 +1,48 @@
+backend:
+  replicaCount: 1
+
+  image:
+    repository: 573011045411.dkr.ecr.ap-south-1.amazonaws.com/portfolio-backend
+    tag: "latest"
+    pullPolicy: Always
+
+  service:
+    type: ClusterIP
+    port: 4000
+    targetPort: 4000
+
+  env:
+    PORT: "4000"
+    NODE_ENV: "development"
+    DATABASE_URL: "postgresql://postgres:postgres@postgres-service:5432/portfolio"
+
+
+frontend:
+  replicaCount: 1
+
+  image:
+    repository: 573011045411.dkr.ecr.ap-south-1.amazonaws.com/portfolio-frontend
+    tag: "latest"
+    pullPolicy: Always
+
+  service:
+    type: LoadBalancer
+    port: 80
+    targetPort: 5173
+
+  env:
+    VITE_PROXY_TARGET: "http://backend-service:4000"
+
+
+postgres:
+  image:
+    repository: postgres
+    tag: "16-alpine"
+
+  service:
+    port: 5432
+
+  database: portfolio
+  username: postgres
+  password: postgres
+
