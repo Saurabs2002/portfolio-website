@@ -56,17 +56,21 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    sh '''
-                        set -e
+                    script {
+                        def scannerHome = tool 'SonarScanner'
 
-                        echo "Running SonarQube analysis..."
+                        sh """
+                            set -e
 
-                        sonar-scanner \
-                          -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-                          -Dsonar.projectName="Portfolio Application" \
-                          -Dsonar.sources=frontend,backend \
-                          -Dsonar.exclusions="**/node_modules/**"
-                    '''
+                            echo "Running SonarQube analysis..."
+
+                            ${scannerHome}/bin/sonar-scanner \
+                              -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                              -Dsonar.projectName="Portfolio Application" \
+                              -Dsonar.sources=frontend,backend \
+                              -Dsonar.exclusions="**/node_modules/**"
+                        """
+                    }
                 }
             }
         }
@@ -97,7 +101,6 @@ pipeline {
     }
 
     post {
-
         success {
             echo '================================'
             echo 'Portfolio CI Pipeline SUCCESS'
