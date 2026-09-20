@@ -160,7 +160,7 @@ pipeline {
 
                     docker tag \
                       portfolio-frontend:${BUILD_NUMBER} \
-                      ${ECR_REGISTRY}/${FRONTEND_REPO}:${BUILD_NUMBER}
+                      ${ECR_REGISTRY}/${FRONTEND_REPO}:latest
                 '''
 
                 echo 'Pushing backend image to ECR...'
@@ -169,7 +169,7 @@ pipeline {
                     set -e
 
                     docker push \
-                      ${ECR_REGISTRY}/${BACKEND_REPO}:${BUILD_NUMBER}
+                      ${ECR_REGISTRY}/${BACKEND_REPO}:latest
                 '''
 
                 echo 'Pushing frontend image to ECR...'
