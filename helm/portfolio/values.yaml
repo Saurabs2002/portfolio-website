@@ -1,5 +1,5 @@
 backend:
-  replicaCount: 2
+  replicaCount: 1
 
   image:
     repository: 573011045411.dkr.ecr.ap-south-1.amazonaws.com/portfolio-backend
@@ -18,7 +18,7 @@ backend:
 
 
 frontend:
-  replicaCount: 1
+  replicaCount: 2
 
   image:
     repository: 573011045411.dkr.ecr.ap-south-1.amazonaws.com/portfolio-frontend
