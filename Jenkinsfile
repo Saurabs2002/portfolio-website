@@ -119,7 +119,31 @@ stage('Docker Build') {
         '''
     }
 }
+stage('Trivy Image Scan') {
+    steps {
+        sh '''
+            set -e
 
+            echo "================================"
+            echo "Trivy Backend Image Scan"
+            echo "================================"
+
+            trivy image \
+              --severity HIGH,CRITICAL \
+              --no-progress \
+              portfolio-backend:${BUILD_NUMBER}
+
+            echo "================================"
+            echo "Trivy Frontend Image Scan"
+            echo "================================"
+
+            trivy image \
+              --severity HIGH,CRITICAL \
+              --no-progress \
+              portfolio-frontend:${BUILD_NUMBER}
+        '''
+    }
+}
 
         stage('Verify') {
             steps {
