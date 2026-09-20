@@ -1,6 +1,8 @@
 pipeline {
     agent any
-
+     triggers {
+        githubPush()
+    }
     environment {
         SONAR_PROJECT_KEY = 'portfolio-app'
 
