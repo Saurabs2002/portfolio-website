@@ -1,10 +1,15 @@
 pipeline {
     agent any
 
+    environment {
+        SONAR_PROJECT_KEY = 'portfolio-app'
+    }
+
     stages {
 
         stage('Checkout') {
             steps {
+                echo 'Checking out source code...'
                 checkout scm
             }
         }
@@ -12,6 +17,8 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
+                    set -e
+
                     echo "Installing frontend dependencies..."
                     cd frontend
                     npm ci
@@ -37,41 +44,74 @@ pipeline {
                 )
             }
         }
-stage('SonarQube Analysis') {
-    steps {
-        withSonarQubeEnv('SonarQube') {
-            sh '''
-                sonar-scanner \
-                  -Dsonar.projectKey=portfolio-app \
-                  -Dsonar.projectName="Portfolio Application" \
-                  -Dsonar.sources=frontend,backend \
-                  -Dsonar.exclusions="**/node_modules/**"
-            '''
+
+        stage('Publish OWASP Report') {
+            steps {
+                dependencyCheckPublisher(
+                    pattern: '**/dependency-check-report.xml'
+                )
+            }
         }
-    }
-}
-        
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh '''
+                        set -e
+
+                        echo "Running SonarQube analysis..."
+
+                        sonar-scanner \
+                          -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+                          -Dsonar.projectName="Portfolio Application" \
+                          -Dsonar.sources=frontend,backend \
+                          -Dsonar.exclusions="**/node_modules/**"
+                    '''
+                }
+            }
+        }
 
         stage('Verify') {
             steps {
                 sh '''
+                    echo "================================"
+                    echo "CI Pipeline Verification"
+                    echo "================================"
+
                     echo "Current directory:"
                     pwd
 
+                    echo ""
                     echo "Project files:"
                     ls -la
+
+                    echo ""
+                    echo "OWASP reports:"
+                    find . -name "dependency-check-report.*" -ls || true
+
+                    echo ""
+                    echo "Pipeline verification completed."
                 '''
             }
         }
     }
 
     post {
+
         success {
-            echo 'Portfolio CI successful'
+            echo '================================'
+            echo 'Portfolio CI Pipeline SUCCESS'
+            echo '================================'
         }
 
         failure {
-            echo 'Portfolio CI failed'
+            echo '================================'
+            echo 'Portfolio CI Pipeline FAILED'
+            echo '================================'
+        }
+
+        always {
+            echo 'Pipeline execution completed.'
         }
     }
 }
