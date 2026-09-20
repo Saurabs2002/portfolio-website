@@ -92,6 +92,34 @@ pipeline {
         '''
     }
 }
+stage('Docker Build') {
+    steps {
+        sh '''
+            set -e
+
+            echo "================================"
+            echo "Building Backend Docker Image"
+            echo "================================"
+
+            docker build \
+              -t portfolio-backend:${BUILD_NUMBER} \
+              ./backend
+
+            echo "================================"
+            echo "Building Frontend Docker Image"
+            echo "================================"
+
+            docker build \
+              -t portfolio-frontend:${BUILD_NUMBER} \
+              ./frontend
+
+            echo "Docker images built successfully"
+
+            docker images | grep portfolio
+        '''
+    }
+}
+
 
         stage('Verify') {
             steps {
