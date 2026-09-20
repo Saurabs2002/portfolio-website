@@ -12,9 +12,11 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
+                    echo "Installing frontend dependencies..."
                     cd frontend
                     npm ci
 
+                    echo "Installing backend dependencies..."
                     cd ../backend
                     npm ci
                 '''
@@ -30,6 +32,7 @@ pipeline {
                         --scan .
                         --format XML
                         --format HTML
+                        --noupdate
                     '''
                 )
             }
@@ -51,6 +54,12 @@ pipeline {
 
                     echo "Project files:"
                     ls -la
+
+                    echo "Frontend:"
+                    ls -la frontend
+
+                    echo "Backend:"
+                    ls -la backend
                 '''
             }
         }
