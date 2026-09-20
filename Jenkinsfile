@@ -8,6 +8,7 @@ pipeline {
                 checkout scm
             }
         }
+
         stage('Install Dependencies') {
             steps {
                 sh '''
@@ -26,6 +27,7 @@ pipeline {
                     additionalArguments: '''
                         --project "Portfolio Application"
                         --scan .
+                        --format XML
                         --format HTML
                     '''
                 )
@@ -39,7 +41,6 @@ pipeline {
                 )
             }
         }
-    }
 
         stage('Verify') {
             steps {
