@@ -38,13 +38,7 @@ pipeline {
             }
         }
 
-        stage('Publish OWASP Report') {
-            steps {
-                dependencyCheckPublisher(
-                    pattern: '**/dependency-check-report.xml'
-                )
-            }
-        }
+        
 
         stage('Verify') {
             steps {
